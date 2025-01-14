@@ -80,9 +80,8 @@ class LabelGen(object):
         c.restoreState()
 
 
-
 class GridGen(object):
-    def __init__(self, num_serials, layout = 40):
+    def __init__(self, num_serials, layout = 40, border=0.5):
         self.num_serials = num_serials
 
         if layout == 1:
@@ -107,12 +106,14 @@ class GridGen(object):
         self.page_count = ceil(num_serials / self.serials_per_page)
         self.num_serials = self.page_count * self.serials_per_page
   
+        self.border = border * mm
+
     def write_pdf(self, output_file, serials):
         
         nx,ny = self.layout
         page_width, page_height = self.page_width, self.page_height
 
-        border = 0.1 * mm
+        border = self.border 
 
         label_width = page_width / nx
         label_height = page_height / ny
@@ -168,12 +169,12 @@ class GridGen(object):
         return serial_number
 
 
+
 def generate_serials(start):
     serial = start
     while True:
         yield n_to_tID(serial)
         serial += 1 
-
 
 def get_start_serial():
 
@@ -189,7 +190,6 @@ def get_start_serial():
     return start
 
 
-
 def write_next_start_serial(next_start_serial):
     config_file = "~/.config/tIDgen-start.txt"
     config_file = os.path.expanduser(config_file)
@@ -198,24 +198,29 @@ def write_next_start_serial(next_start_serial):
     with open(config_file, "w") as f:
         f.write(str(next_start_serial)) 
 
+from autocommand import autocommand
 
-start = None
+@autocommand(__name__)
+def main(count=25,start=None,layout=40,save_next_serial=None, border=0.5):  
+    """
+    Erstellt ein PDF mit QR-Codes und Seriennummern für die TAG-Labels.
+    """
+  
+    if start is None:
+        start = get_start_serial()
+        save_next_serial = True
 
-if start is None:
-    start = get_start_serial()
+    grid_gen = GridGen(count,layout=layout,border=border)
+    print(f"generiere {grid_gen.num_serials} tIDs ...")
+    nx,ny = grid_gen.layout
+    output_file = f"TAG labels {start}-{start+grid_gen.num_serials-1} ({nx}x{ny}).pdf"
 
-count = 25
+    grid_gen.write_pdf(output_file, generate_serials(start))
 
-grid_gen = GridGen(count,layout=40)
-print(grid_gen.num_serials)
-nx,ny = grid_gen.layout
-output_file = f"TAG labels {start}-{start+grid_gen.num_serials} ({nx}x{ny}).pdf"
+    print(f"PDF mit Labels wurde erfolgreich erstellt: {output_file}")
 
-grid_gen.write_pdf(output_file, generate_serials(start))
-
-print(f"PDF mit Labels wurde erfolgreich erstellt: {output_file}")
-
-write_next_start_serial(start + grid_gen.num_serials)
+    if save_next_serial: 
+        write_next_start_serial(start + grid_gen.num_serials)
 
 
 
