@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
@@ -201,11 +201,11 @@ def write_next_start_serial(next_start_serial):
 from autocommand import autocommand
 
 @autocommand(__name__)
-def main(count=25,start=None,layout=40,save_next_serial=None, border=0.5):  
+def main(count=25,start:int=None,layout=40,save_next_serial:bool=None, border=0.5):  
     """
     Erstellt ein PDF mit QR-Codes und Seriennummern für die TAG-Labels.
     """
-  
+
     if start is None:
         start = get_start_serial()
         save_next_serial = True
